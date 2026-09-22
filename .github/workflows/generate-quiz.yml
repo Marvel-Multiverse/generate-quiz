@@ -1,0 +1,89 @@
+name: Generate Quiz Questions
+
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "Quantidade de perguntas válidas"
+        required: true
+        default: "20"
+        type: string
+      difficulty:
+        description: "Dificuldade"
+        required: true
+        default: MIXED
+        type: choice
+        options: [MIXED, EASY, MEDIUM, HARD]
+      category:
+        description: "Categoria"
+        required: true
+        default: MIXED
+        type: choice
+        options: [MIXED, CHARACTERS, POWERS, TEAMS, COMICS, STORY_ARCS, MOVIES, LOCATIONS, GENERAL]
+      source:
+        description: "Fonte (web só é usada quando configurada)"
+        required: true
+        default: comicvine
+        type: choice
+        options: [comicvine, mixed]
+      dry_run:
+        description: "Gerar e validar sem inserir no Firestore"
+        required: false
+        default: false
+        type: boolean
+  # Para ativar um cron semanal, descomente as duas linhas abaixo.
+  # schedule:
+  #   - cron: "23 9 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: generate-quiz-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      COMIC_VINE_API_KEY: ${{ secrets.COMIC_VINE_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      WEB_SEARCH_API_KEY: ${{ secrets.WEB_SEARCH_API_KEY }}
+      WEB_SEARCH_PROVIDER: ${{ vars.WEB_SEARCH_PROVIDER || 'none' }}
+      WEB_TRUSTED_DOMAINS: ${{ vars.WEB_TRUSTED_DOMAINS || 'marvel.com' }}
+      FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID || 'default' }}
+      APP_TIMEZONE: America/Sao_Paulo
+      AI_PROVIDER: groq
+      AI_MODEL: openai/gpt-oss-120b
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          [[ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ]] || { echo "Missing required secret: FIREBASE_SERVICE_ACCOUNT_JSON" >&2; exit 1; }
+          [[ -n "$COMIC_VINE_API_KEY" ]] || { echo "Missing required secret: COMIC_VINE_API_KEY" >&2; exit 1; }
+          [[ -n "$GROQ_API_KEY" ]] || { echo "Missing required secret: GROQ_API_KEY" >&2; exit 1; }
+
+      - name: Generate questions
+        shell: bash
+        run: |
+          args=(--count "${{ inputs.count || '20' }}" --difficulty "${{ inputs.difficulty || 'MIXED' }}" --category "${{ inputs.category || 'MIXED' }}" --source "${{ inputs.source || 'comicvine' }}")
+          if [ "${{ inputs.dry_run }}" = "true" ]; then args+=(--dry-run); fi
+          python -m src.main "${args[@]}"
