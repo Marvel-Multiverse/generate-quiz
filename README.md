@@ -57,7 +57,9 @@ python -m pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Preencha `COMIC_VINE_API_KEY`, `GROQ_API_KEY` e a credencial Firebase local. O arquivo esperado
+Preencha `COMIC_VINE_API_KEY`, `GROQ_API_KEY` e a credencial Firebase local. `GROQ_API_KEY`
+aceita uma chave ou várias chaves na ordem de fallback, separadas por `|`; quando uma chave
+atinge cota/rate limit, a próxima é usada sem expor valores nos logs. O arquivo esperado
 é `firebase-service-account.json`, ou outro caminho em `FIREBASE_CREDENTIALS_PATH`. Ambos `.env`
 e credenciais são ignorados pelo Git. O banco deste workspace usa ID `default`.
 
@@ -94,7 +96,7 @@ parciais; erros reais de configuração, autenticação ou implementação conti
 
 - `FIREBASE_SERVICE_ACCOUNT_JSON` — JSON completo da Service Account;
 - `COMIC_VINE_API_KEY`;
-- `GROQ_API_KEY`;
+- `GROQ_API_KEY` — uma chave ou uma lista ordenada separada por `|`;
 - `WEB_SEARCH_API_KEY` — opcional, somente para Tavily.
 
 Para web, configure também a variável do repositório `WEB_SEARCH_PROVIDER=tavily` e, se quiser,
