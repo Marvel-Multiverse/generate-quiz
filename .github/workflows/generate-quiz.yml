@@ -58,6 +58,7 @@ jobs:
       AI_PROVIDER: groq
       AI_MODEL: ${{ vars.AI_MODEL || 'openai/gpt-oss-20b' }}
       AI_BATCH_SIZE: ${{ vars.AI_BATCH_SIZE || '1' }}
+      AI_CONTEXT_MAX_CHARS: ${{ vars.AI_CONTEXT_MAX_CHARS || '18000' }}
 
     steps:
       - name: Checkout

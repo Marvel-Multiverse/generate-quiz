@@ -105,6 +105,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             ai_client=ai_client,
             repository=repository,
             ai_batch_size=settings.ai_batch_size,
+            ai_context_max_chars=settings.ai_context_max_chars,
             web_client=web_client,
         )
     except (AiQuotaUnavailable, ComicVineQuotaUnavailable) as error:

@@ -62,6 +62,7 @@ aceita uma chave ou várias chaves na ordem de fallback, separadas por `|`; quan
 atinge cota/rate limit, a próxima é usada sem expor valores nos logs. O arquivo esperado
 é `firebase-service-account.json`, ou outro caminho em `FIREBASE_CREDENTIALS_PATH`. Ambos `.env`
 e credenciais são ignorados pelo Git. O banco deste workspace usa ID `default`.
+`AI_CONTEXT_MAX_CHARS` limita o contexto enviado à Groq (padrão `18000`) para evitar HTTP 413.
 
 Comic Vine documenta limite e uso não comercial; confira os termos antes de produção:
 <https://comicvine.gamespot.com/api/>.

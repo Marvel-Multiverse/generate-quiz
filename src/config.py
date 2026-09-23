@@ -51,6 +51,7 @@ class Settings:
     ai_api_key: str = field(repr=False)
     ai_batch_size: int
     ai_max_retries: int
+    ai_context_max_chars: int
     web_search_provider: str
     web_search_api_key: str = field(repr=False)
     web_trusted_domains: tuple[str, ...]
@@ -104,6 +105,10 @@ class Settings:
             ),
             ai_batch_size=min(_positive_int("AI_BATCH_SIZE", 10), 20),
             ai_max_retries=min(_positive_int("AI_MAX_RETRIES", 3), 5),
+            ai_context_max_chars=min(
+                max(_positive_int("AI_CONTEXT_MAX_CHARS", 18_000), 2_000),
+                60_000,
+            ),
             web_search_provider=web_provider,
             web_search_api_key=(
                 os.getenv("WEB_SEARCH_API_KEY", "").strip()

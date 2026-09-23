@@ -4,8 +4,10 @@ import unittest
 from unittest.mock import patch
 
 from src.ai.client import (
+    AiGenerationError,
     AiQuotaUnavailable,
     GroqQuizAiClient,
+    _is_payload_too_large,
     _is_quota_error,
     _split_api_keys,
 )
@@ -14,6 +16,10 @@ from src.main import main
 
 class StatusError(RuntimeError):
     status_code = 429
+
+
+class PayloadError(RuntimeError):
+    status_code = 413
 
 
 class FailingStructuredModel:
@@ -48,7 +54,23 @@ class QuotaHandlingTests(unittest.TestCase):
     def test_recognizes_http_429_and_quota_messages(self):
         self.assertTrue(_is_quota_error(StatusError("limited")))
         self.assertTrue(_is_quota_error(RuntimeError("insufficient_quota")))
+        self.assertFalse(_is_quota_error(PayloadError("tokens per minute")))
+        self.assertTrue(_is_payload_too_large(PayloadError("too large")))
         self.assertFalse(_is_quota_error(RuntimeError("invalid schema")))
+
+    def test_ai_client_does_not_rotate_keys_for_oversized_payload(self):
+        client = GroqQuizAiClient.__new__(GroqQuizAiClient)
+        first = FailingStructuredModel()
+        first.invoke = lambda messages: (_ for _ in ()).throw(PayloadError("too large"))
+        successful = SuccessfulStructuredModel()
+        client._structured_models = [first, successful]
+        client._max_retries = 3
+        client._active_key_index = 0
+        with self.assertRaises(AiGenerationError):
+            client.generate(
+                count=1, difficulty="EASY", category="CHARACTERS", context="data"
+            )
+        self.assertEqual(successful.calls, 0)
 
     def test_ai_client_uses_next_key_on_quota_and_remembers_success(self):
         client = GroqQuizAiClient.__new__(GroqQuizAiClient)

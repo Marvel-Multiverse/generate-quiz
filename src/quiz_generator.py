@@ -60,6 +60,7 @@ def generate_quiz_questions(
     ai_client: QuizAiClient,
     repository: QuizRepository,
     ai_batch_size: int = 10,
+    ai_context_max_chars: int = 18_000,
     web_client: WebClient | None = None,
 ) -> GenerationSummary:
     if count <= 0 or count > 200:
@@ -79,7 +80,9 @@ def generate_quiz_questions(
                 type(error).__name__,
             )
 
-    supplied_contexts = select_contexts_for_prompt(contexts)
+    supplied_contexts = select_contexts_for_prompt(
+        contexts, max_chars=ai_context_max_chars
+    )
     serialized = serialize_contexts(supplied_contexts)
     if not serialized:
         raise QuizGenerationError("contexto serializado vazio")

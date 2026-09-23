@@ -52,10 +52,25 @@ def _is_quota_error(error: Exception) -> bool:
         status_code = getattr(current, "status_code", None)
         response = getattr(current, "response", None)
         response_status = getattr(response, "status_code", None)
+        if status_code == 413 or response_status == 413:
+            return False
         if status_code == 429 or response_status == 429:
             return True
         message = str(current).casefold()
         if any(marker in message for marker in quota_markers):
+            return True
+        current = current.__cause__ or current.__context__
+    return False
+
+
+def _is_payload_too_large(error: Exception) -> bool:
+    current: BaseException | None = error
+    visited: set[int] = set()
+    while current is not None and id(current) not in visited:
+        visited.add(id(current))
+        status_code = getattr(current, "status_code", None)
+        response_status = getattr(getattr(current, "response", None), "status_code", None)
+        if status_code == 413 or response_status == 413:
             return True
         current = current.__cause__ or current.__context__
     return False
@@ -120,6 +135,10 @@ class GroqQuizAiClient:
                     return GeneratedQuizBatch.model_validate(result)
                 except Exception as error:
                     last_error = error
+                    if _is_payload_too_large(error):
+                        raise AiGenerationError(
+                            "a requisição excedeu o limite da Groq; reduza AI_CONTEXT_MAX_CHARS"
+                        ) from error
                     if _is_quota_error(error):
                         quota_failures += 1
                         break
