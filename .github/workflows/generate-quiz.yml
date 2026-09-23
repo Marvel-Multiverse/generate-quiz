@@ -56,7 +56,8 @@ jobs:
       FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID || 'default' }}
       APP_TIMEZONE: America/Sao_Paulo
       AI_PROVIDER: groq
-      AI_MODEL: openai/gpt-oss-120b
+      AI_MODEL: ${{ vars.AI_MODEL || 'openai/gpt-oss-20b' }}
+      AI_BATCH_SIZE: ${{ vars.AI_BATCH_SIZE || '1' }}
 
     steps:
       - name: Checkout
